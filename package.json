@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nx run-many -t dev -p admin -p products-api -p frontend -p fulfillment-api --parallel 5",
+    "mcp": "node apps/mcp-order-server/sse-server.js",
     "clean": "rm -rf node_modules && rm -rf pnpm-lock.yaml && rm -rf */**/node_modules && rm -rf */**/pnpm-lock.yaml"
   },
   "keywords": [],
@@ -13,6 +14,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.6.5",
   "devDependencies": {
+    "cross-env": "7.0.3",
     "nx": "20.6.2"
   },
   "nx": {}

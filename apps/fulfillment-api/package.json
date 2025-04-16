@@ -5,7 +5,7 @@
   "main": "index.js",
   "private": true,
   "scripts": {
-    "dev": "PORT=8080 tsx watch server.ts"
+    "dev": "cross-env PORT=8080 tsx watch server.ts"
   },
   "keywords": [],
   "author": "",
