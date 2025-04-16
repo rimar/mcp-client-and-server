@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "@tanstack/react-store";
-import { Send, X } from "lucide-react";
+import { Send, X, Mic } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
@@ -8,6 +8,7 @@ import rehypeHighlight from "rehype-highlight";
 import remarkGfm from "remark-gfm";
 import { useChat } from "@ai-sdk/react";
 import { genAIResponse } from "../utils/ai";
+import { transcribeAudio } from "../routes/api/transcribe.api";
 
 import { showAIAssistant } from "../store/assistant";
 
@@ -108,6 +109,90 @@ export default function AIAssistant() {
     },
   });
 
+  // Audio recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [recordError, setRecordError] = useState<string | null>(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  const handleMicClick = async () => {
+    if (isRecording) {
+      // Stop recording
+      mediaRecorderRef.current?.stop();
+      setIsRecording(false);
+      return;
+    }
+    setRecordError(null);
+    setAudioBlob(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new window.MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        setAudioBlob(audioBlob);
+        stream.getTracks().forEach((track) => track.stop());
+        
+        // Transcribe the audio
+        await transcribeAudioToText(audioBlob);
+      };
+      mediaRecorder.onerror = (event) => {
+        setRecordError('Recording error');
+        setIsRecording(false);
+        stream.getTracks().forEach((track) => track.stop());
+      };
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err: any) {
+      setRecordError(err.message || 'Could not start recording');
+      setIsRecording(false);
+    }
+  };
+
+  const transcribeAudioToText = async (blob: Blob) => {
+    try {
+      setIsTranscribing(true);
+      
+      // Convert Blob to base64 string
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve) => {
+        reader.onloadend = () => {
+          resolve(reader.result as string);
+        };
+      });
+      reader.readAsDataURL(blob);
+      const base64Audio = await base64Promise;
+      
+      // Send to API for transcription
+      const result = await transcribeAudio({
+        data: { audioBlob: base64Audio }
+      });
+      
+      if (result.success && result.text) {
+        // Set the transcribed text as input
+        const event = {
+          target: { value: result.text }
+        } as React.ChangeEvent<HTMLTextAreaElement>;
+        handleInputChange(event);
+      } else {
+        setRecordError('Transcription failed: ' + (result.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error transcribing audio:', error);
+      setRecordError('Failed to transcribe audio');
+    } finally {
+      setIsTranscribing(false);
+    }
+  };
+
   return (
     <div className="relative z-50">
       <button
@@ -158,6 +243,15 @@ export default function AIAssistant() {
                   }}
                 />
                 <button
+                  type="button"
+                  className={`absolute right-10 top-1/2 -translate-y-1/2 p-1.5 transition-colors focus:outline-none ${isRecording ? 'text-red-500 animate-pulse' : isTranscribing ? 'text-yellow-500 animate-pulse' : 'text-orange-500 hover:text-orange-400'}`}
+                  onClick={handleMicClick}
+                  disabled={isTranscribing}
+                  aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+                >
+                  <Mic className="w-4 h-4" />
+                </button>
+                <button
                   type="submit"
                   disabled={!input.trim()}
                   className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-orange-500 hover:text-orange-400 disabled:text-gray-500 transition-colors focus:outline-none"
@@ -167,6 +261,23 @@ export default function AIAssistant() {
               </div>
             </form>
           </div>
+
+          {isRecording && (
+            <div className="text-xs text-red-400 mt-2 flex items-center gap-1 px-3">
+              <span className="animate-pulse">●</span> Recording...
+            </div>
+          )}
+          {isTranscribing && (
+            <div className="text-xs text-yellow-400 mt-2 flex items-center gap-1 px-3">
+              <span className="animate-pulse">●</span> Transcribing...
+            </div>
+          )}
+          {recordError && (
+            <div className="text-xs text-red-400 mt-2 px-3">{recordError}</div>
+          )}
+          {audioBlob && !isTranscribing && !recordError && (
+            <div className="text-xs text-green-400 mt-2 px-3">Audio recorded! ({(audioBlob.size / 1024).toFixed(1)} KB)</div>
+          )}
         </div>
       )}
     </div>
