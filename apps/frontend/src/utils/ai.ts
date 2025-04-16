@@ -20,6 +20,8 @@ You can get a list of products by using the getInventory tool.
 You can purchase a product by using the purchase tool.
 
 After purchasing a product tell the customer they've made a great choice and their order will be processed soon and they will be playing their new guitar in no time.
+
+Additionally, you can show dataset visualizations to the user. If a user asks about "the best dataset" or asks to see dataset information, use the recommendDataset tool with any ID from 1 to 5 to show them a chart of dataset performance metrics.
 `;
 
 export const genAIResponse = createServerFn({ method: "POST", response: "raw" })

@@ -13,6 +13,7 @@ import { transcribeAudio } from "../routes/api/transcribe.api";
 import { showAIAssistant } from "../store/assistant";
 
 import GuitarRecommendation from "./GuitarRecommendation";
+import DatasetChart from "./DatasetChart";
 
 import type { UIMessage } from "ai";
 
@@ -74,14 +75,21 @@ function Messages({ messages }: { messages: Array<UIMessage> }) {
           {parts
             .filter((part) => part.type === "tool-invocation")
             .filter(
-              (part) => part.toolInvocation.toolName === "recommendGuitar"
+              (part) => 
+                part.toolInvocation.toolName === "recommendGuitar" || 
+                part.toolInvocation.toolName === "recommendDataset"
             )
             .map((toolCall) => (
               <div
                 key={toolCall.toolInvocation.toolName}
                 className="max-w-[80%] mx-auto"
               >
-                <GuitarRecommendation id={toolCall.toolInvocation.args.id} />
+                {toolCall.toolInvocation.toolName === "recommendGuitar" && (
+                  <GuitarRecommendation id={toolCall.toolInvocation.args.id} />
+                )}
+                {toolCall.toolInvocation.toolName === "recommendDataset" && (
+                  <DatasetChart id={toolCall.toolInvocation.args.id} />
+                )}
               </div>
             ))}
         </div>
@@ -103,7 +111,8 @@ export default function AIAssistant() {
       });
     },
     onToolCall: (call) => {
-      if (call.toolCall.toolName === "recommendGuitar") {
+      if (call.toolCall.toolName === "recommendGuitar" || 
+          call.toolCall.toolName === "recommendDataset") {
         return "Handled by the UI";
       }
     },

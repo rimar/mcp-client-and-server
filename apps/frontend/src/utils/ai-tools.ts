@@ -24,11 +24,19 @@ const recommendGuitar = tool({
   }),
 });
 
+const recommendDataset = tool({
+  description: "Show a chart visualization of dataset information to the user",
+  parameters: z.object({
+    id: z.string().describe("The id of the dataset collection to display"),
+  }),
+});
+
 export default async function getTools() {
   const tools = await mcpClient.tools();
   return {
     ...tools,
     getProducts,
     recommendGuitar,
+    recommendDataset,
   };
 }
