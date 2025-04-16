@@ -75,6 +75,7 @@ export const genAIResponse = createServerFn({ method: "POST", response: "raw" })
         system: SYSTEM_PROMPT,
         maxSteps: 20,
         tools,
+        maxRetries: 10,
       });
 
       // Use our helper function to handle headers properly before streaming
