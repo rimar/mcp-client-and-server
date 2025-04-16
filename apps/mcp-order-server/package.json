@@ -1,8 +1,8 @@
 {
-  "name": "apps",
+  "name": "mcp-order-server",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "MSSQL MCP Server using stdio transport",
+  "main": "stdio-server.js",
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -13,7 +13,6 @@
   "packageManager": "pnpm@10.6.5",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.7.0",
-    "express": "^4.21.2",
     "zod": "^3.24.2"
   }
 }
