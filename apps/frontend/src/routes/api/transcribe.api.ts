@@ -2,9 +2,23 @@ import { createServerFn } from "@tanstack/react-start";
 import { writeFileSync } from "fs";
 import path from "path";
 import os from "os";
+import { getEvent, setHeaders } from "@tanstack/react-start/server";
 
 interface TranscriptionResponse {
   text: string;
+}
+
+// Helper function to handle responses properly
+async function handleResponse(response: any): Promise<any> {
+  const event = getEvent();
+  
+  // If we're dealing with response headers, set them before returning
+  if (response && response.headers) {
+    const headers = Object.fromEntries(Object.entries(response.headers));
+    setHeaders(event, headers);
+  }
+  
+  return response;
 }
 
 export const transcribeAudio = createServerFn({ 
@@ -50,15 +64,15 @@ export const transcribeAudio = createServerFn({
       
       const result = await response.json() as TranscriptionResponse;
       
-      return {
+      return handleResponse({
         success: true,
         text: result.text,
-      };
+      });
     } catch (error) {
       console.error("Transcription error:", error);
-      return {
+      return handleResponse({
         success: false,
         error: error instanceof Error ? error.message : "Failed to transcribe audio",
-      };
+      });
     }
   }); 

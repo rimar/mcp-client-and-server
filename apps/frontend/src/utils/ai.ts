@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { anthropic } from "@ai-sdk/anthropic";
 import { streamText } from "ai";
+import { getEvent, setHeaders } from "@tanstack/react-start/server";
 
 import getTools from "./ai-tools";
 
@@ -30,6 +31,21 @@ Additionally, you can show dataset visualizations to the user. If a user asks ab
 
 Use your expertise to provide the most relevant and helpful response based on the user's specific question and context.
 `;
+
+// Helper function to handle streaming responses properly
+async function handleStreamingResponse(response: Response): Promise<Response> {
+  const event = getEvent();
+  
+  // Set headers from response before streaming begins
+  const headers = Object.fromEntries(response.headers.entries());
+  setHeaders(event, headers);
+  
+  // Create and return a new response with the same body
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText
+  });
+}
 
 export const genAIResponse = createServerFn({ method: "POST", response: "raw" })
   .validator(
@@ -61,7 +77,9 @@ export const genAIResponse = createServerFn({ method: "POST", response: "raw" })
         tools,
       });
 
-      return result.toDataStreamResponse();
+      // Use our helper function to handle headers properly before streaming
+      const dataStreamResponse = result.toDataStreamResponse();
+      return handleStreamingResponse(dataStreamResponse);
     } catch (error) {
       console.error("Error in genAIResponse:", error);
       if (error instanceof Error && error.message.includes("rate limit")) {
