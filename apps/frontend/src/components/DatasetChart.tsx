@@ -1,46 +1,60 @@
-import React from "react";
+import React, { useMemo } from "react";
 
-// Dummy data for the chart
-const chartData = [
-  { name: "Dataset A", value: 78, color: "#10B981" },
-  { name: "Dataset B", value: 65, color: "#3B82F6" },
-  { name: "Dataset C", value: 52, color: "#EC4899" },
-  { name: "Dataset D", value: 45, color: "#F59E0B" },
-  { name: "Dataset E", value: 38, color: "#8B5CF6" },
-];
+export interface DataItem {
+  name: string;
+  value: number;
+  color: string;
+}
 
 interface DatasetChartProps {
   id: string;
+  title: string;
+  description: string;
+  data: DataItem[];
+  lastUpdated: string;
 }
 
-export default function DatasetChart({ id }: DatasetChartProps) {
-  // Get the max value to calculate percentages
-  const maxValue = Math.max(...chartData.map((item) => item.value));
+export default function DatasetChart({ 
+  id, 
+  title, 
+  description, 
+  data,
+  lastUpdated
+}: DatasetChartProps) {
+  // Calculate the max value once using useMemo to prevent recalculations
+  const maxValue = useMemo(() => {
+    return Math.max(...data.map(item => item.value));
+  }, [data]);
   
-  // Dataset name based on the ID
-  const datasetName = `Dataset Collection ${id}`;
+  // Calculate widths once using useMemo
+  const barWidths = useMemo(() => {
+    return data.map(item => ({
+      ...item,
+      width: `${(item.value / maxValue) * 100}%`
+    }));
+  }, [data, maxValue]);
   
   return (
     <div className="my-4 rounded-lg overflow-hidden border border-gray-200 bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-800">{datasetName}</h3>
+        <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
         <div className="text-sm text-blue-600 font-medium">
-          Top 5 Datasets
+          {data.length} Data Points
         </div>
       </div>
       
       <div className="space-y-3">
-        {chartData.map((item) => (
+        {barWidths.map((item) => (
           <div key={item.name} className="space-y-1">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">{item.name}</span>
+              <span className="text-gray-700 font-medium">{item.name}</span>
               <span className="text-gray-800 font-medium">{item.value}%</span>
             </div>
-            <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
               <div 
                 className="h-full rounded-full" 
                 style={{
-                  width: `${(item.value / maxValue) * 100}%`,
+                  width: item.width,
                   backgroundColor: item.color
                 }}
               />
@@ -49,9 +63,9 @@ export default function DatasetChart({ id }: DatasetChartProps) {
         ))}
       </div>
       
-      <div className="mt-5 text-sm text-gray-500">
-        <p>This chart shows the relative performance of top datasets based on accuracy metrics.</p>
-        <p className="mt-2">Data last updated: {new Date().toLocaleDateString()}</p>
+      <div className="mt-5 text-sm text-gray-600">
+        <p>{description}</p>
+        <p className="mt-2 text-gray-500">Data last updated: {lastUpdated}</p>
       </div>
     </div>
   );

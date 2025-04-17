@@ -88,7 +88,13 @@ function Messages({ messages }: { messages: Array<UIMessage> }) {
                   <GuitarRecommendation id={toolCall.toolInvocation.args.id} />
                 )}
                 {toolCall.toolInvocation.toolName === "recommendDataset" && (
-                  <DatasetChart id={toolCall.toolInvocation.args.id} />
+                  <DatasetChart 
+                    id={toolCall.toolInvocation.args.id}
+                    title={toolCall.toolInvocation.args.title}
+                    description={toolCall.toolInvocation.args.description}
+                    data={toolCall.toolInvocation.args.data}
+                    lastUpdated={toolCall.toolInvocation.args.lastUpdated}
+                  />
                 )}
               </div>
             ))}

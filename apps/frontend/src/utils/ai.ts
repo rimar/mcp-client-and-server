@@ -27,9 +27,33 @@ When users ask questions:
 4. Identify potential risks or compliance concerns
 5. Recommend system features that could address their needs
 
-Additionally, you can show dataset visualizations to the user. If a user asks about "the best dataset" or asks to see dataset information, use the recommendDataset tool with any ID from 1 to 5 to show them a chart of dataset performance metrics.
+IMPORTANT: After providing your answer, proactively evaluate if the topic would benefit from a data visualization. If discussing metrics, statistics, performance data, user activity, or any quantifiable information, generate and show a contextually relevant dataset visualization.
 
-Use your expertise to provide the most relevant and helpful response based on the user's specific question and context.
+When creating a visualization:
+1. You MUST populate the 'data' array with EXACTLY 5 data points that directly relate to the discussion topic
+2. NEVER use generic labels like "Dataset A, Dataset B" - always use specific labels like "Finance Department", "HR Team", etc.
+3. Use a relevant title that describes what the data represents (e.g., "SoD Violations by Department")
+4. Include a brief description (1-2 sentences max) that helps interpret the chart
+5. Set the lastUpdated field to the current date (format: "April 16, 2024")
+6. Ensure ALL data values are between 0-100 (representing percentages)
+7. ALWAYS include valid hex color codes that start with "#" followed by 6 characters
+
+Data structure example:
+{
+  "id": "access_distribution",
+  "title": "Access Distribution by Department",
+  "description": "Shows the percentage of privileged access rights distributed across departments.",
+  "data": [
+    { "name": "Finance", "value": 78, "color": "#10B981" },
+    { "name": "HR", "value": 65, "color": "#3B82F6" },
+    { "name": "IT", "value": 52, "color": "#8B5CF6" },
+    { "name": "Operations", "value": 45, "color": "#EC4899" },
+    { "name": "Sales", "value": 38, "color": "#F59E0B" }
+  ],
+  "lastUpdated": "April 16, 2024"
+}
+
+Always generate appropriate data that relates to the user's query and your response.
 `;
 
 // Helper function to handle streaming responses properly
@@ -84,11 +108,14 @@ export const genAIResponse = createServerFn({ method: "POST", response: "raw" })
     } catch (error) {
       console.error("Error in genAIResponse:", error);
       if (error instanceof Error && error.message.includes("rate limit")) {
-        return { error: "Rate limit exceeded. Please try again in a moment." };
+        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
+          headers: { "Content-Type": "application/json" }
+        });
       }
-      return {
-        error:
-          error instanceof Error ? error.message : "Failed to get AI response",
-      };
+      return new Response(JSON.stringify({
+        error: error instanceof Error ? error.message : "Failed to get AI response"
+      }), {
+        headers: { "Content-Type": "application/json" }
+      });
     }
   });
